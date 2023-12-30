@@ -1,0 +1,80 @@
+version: "3.7"
+
+services:
+    # image project
+    site:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        working_dir: /var/www/
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis
+        networks:
+            - lab_ufopa
+
+    # db postgres
+    db:
+        container_name: postgres
+        image: postgres
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: lab_ufopa
+            POSTGRES_DB: lab_ufopa
+        ports:
+           - "5432:5432"
+        volumes:
+           - ./.docker/pg-data/:/var/lib/postgresql/data
+        networks:
+           - lab_ufopa
+
+    # nginx web server
+    nginx:
+        container_name: nginx
+        image: nginx
+        restart: unless-stopped
+        ports:
+            - "80:80"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/:/etc/nginx/conf.d/
+        networks:
+            - lab_ufopa
+    # queue
+    queue:
+        container_name: queue
+        image: "mophos/queue"
+        restart: unless-stopped
+        command: "php artisan queue:work"
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis
+            - site
+        networks:
+            - lab_ufopa
+
+    # redis
+    redis:
+        container_name: redis
+        image: redis:latest
+        networks:
+            - lab_ufopa
+    # adm db
+    pgadmin:
+        image: dpage/pgadmin4
+        container_name: pgAdmin
+        ports:
+            - "5050:80"
+        environment:
+            PGADMIN_DEFAULT_EMAIL: laba@lab.com
+            PGADMIN_DEFAULT_PASSWORD: lab
+        networks:
+            - lab_ufopa
+
+networks:
+    lab_ufopa:
+        driver: bridge
