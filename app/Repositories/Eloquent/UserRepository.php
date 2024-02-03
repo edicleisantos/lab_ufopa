@@ -10,7 +10,7 @@ Class UserRepository implements UserRepositoryInterface
     private $model;
 
     /*
-        fazendo a injecao do model User
+        fazendo a injecao do model User no construtor
     */
     public function __construct(Model $model)
     {
